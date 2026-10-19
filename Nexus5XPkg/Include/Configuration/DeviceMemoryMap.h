@@ -80,10 +80,17 @@ static ARM_MEMORY_REGION_DESCRIPTOR_EX gDeviceMemoryDescriptorEx[] = {
     {"CPU Vectors",       0x00C40000, 0x00010000, AddMem, SYS_MEM, SYS_MEM_CAP,  BsCode, WRITE_BACK},
     {"Reser. Cached 0",   0x00C50000, 0x000B0000, AddMem, SYS_MEM, SYS_MEM_CAP,  BsData, WRITE_BACK},
 #if SILICON_PLATFORM == 8992
+#if defined(DEVICE_LGG4)
+    {"HLOS 2",            0x00D00000, 0x02700000, AddMem, SYS_MEM, SYS_MEM_CAP,  BsData, WRITE_BACK},
+    {"Display Reserved",  0x03400000, 0x01200000, AddMem, MEM_RES, WRITE_THROUGH, MaxMem, WRITE_THROUGH},
+    {"HLOS 3",            0x04600000, 0x00A00000, AddMem, SYS_MEM, SYS_MEM_CAP,  Conv,   WRITE_BACK},
+    {"Removed Region 1",  0x05000000, 0x01500000, AddMem, SYS_MEM, SYS_MEM_CAP,  Reserv, NS_DEVICE},
+#else
     {"HLOS 2",            0x00D00000, 0x02700000, AddMem, SYS_MEM, SYS_MEM_CAP,  BsData, WRITE_BACK},
     {"Display Reserved",  0x03400000, 0x00C00000, AddMem, MEM_RES, WRITE_THROUGH, MaxMem, WRITE_THROUGH},
     {"HLOS 3",            0x04000000, 0x01000000, AddMem, SYS_MEM, SYS_MEM_CAP,  Conv,   WRITE_BACK},
     {"Removed Region 1",  0x05000000, 0x01500000, AddMem, SYS_MEM, SYS_MEM_CAP,  Reserv, NS_DEVICE},
+#endif
 #else
     {"HLOS 2",            0x00D00000, 0x02700000, AddMem, SYS_MEM, SYS_MEM_CAP,  BsData, WRITE_BACK},
     {"Display Reserved",  0x03400000, 0x01200000, AddMem, MEM_RES, WRITE_THROUGH, MaxMem, WRITE_THROUGH},
@@ -117,7 +124,11 @@ static ARM_MEMORY_REGION_DESCRIPTOR_EX gDeviceMemoryDescriptorEx[] = {
 
     /* RAM partition regions */
 #if SILICON_PLATFORM == 8992
+#if defined(DEVICE_LGG4)
+    {"RAM Partition",     0x20000000, 0xA0000000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},
+#else
     {"RAM Partition",     0x20000000, 0x60000000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},
+#endif
 #else
     {"DXE Heap",          0x20000000, 0x10000000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},
     {"RAM Partition",     0x30000000, 0x30000000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv,   WRITE_BACK_XN},

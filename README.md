@@ -1,22 +1,39 @@
-# WIP EDK2 UEFI Implementation for LG Nexus 5X and Huawei Nexus 6P (based on [Lumia950XLPkg](https://github.com/WOA-Project/Lumia950XLPkg))
+# WIP EDK2 UEFI Implementation for LG G4, LG Nexus 5X, and Huawei Nexus 6P (based on [Lumia950XLPkg](https://github.com/WOA-Project/Lumia950XLPkg))
 
 ## Support Status
  - EDK2 boots fully!
- - Display via framebuffer works
+ - Display via framebuffer works (1440x2560 QHD on LG G4 & Nexus 6P, 1080x1920 FHD on Nexus 5X)
+ - Keypad navigation (Power / Volume buttons)
 
 ## Run
 
-Stock bootloader on Nexus 5X is aarch64, so it's possible to flash uefi to boot or recovery partition and load it as a kernel.
-This implementation reuses PrePi from [SurfaceDuoPkg](https://github.com/WOA-Project/SurfaceDuoPkg). The reason for it is that
-the stock bootloader loads uefi at the kernel load adress, which isn't really suitable. Surface Duo's PrePi implements relocation
-to copy the payload to the right space.
+Stock bootloader on LG G4 and Nexus 5X is aarch64, so it's possible to test boot via Fastboot:
+```bash
+fastboot boot uefi_lgg4.img
+```
+(Or use `uefi_lgg4_2k.img` if using a 2048-byte page size bootloader / recovery environment.)
+
+This implementation reuses PrePi from [SurfaceDuoPkg](https://github.com/WOA-Project/SurfaceDuoPkg) and `BootShim`. The reason for it is that
+the stock bootloader loads UEFI at the kernel load address, which isn't suitable. `BootShim` relocates
+the payload to the designated UEFI base address (`0x00200000`).
 
 ## Compile
-Last known good edk2 commit is 838c730fe61578847823da1b815e4c9c5ee1bed4 (thx Gus for pinning)
+
+Build for LG G4:
+```bash
+./build.sh -d LGG4
+```
+
+Or for release mode:
+```bash
+./build.sh -d LGG4 --release
+```
+
+Last known good edk2 commit is 838c730fe61578847823da1b815e4c9c5ee1bed4 (thx Gus for pinning).
 
 ## Windows Notes
 
-Windows boots fine now (although with only emmc and display via framebuffer working for now on the 5X, Nexus 6P loads more drivers)
+Windows boots fine (although with only emmc and display via framebuffer working for now on the 5X/G4, Nexus 6P loads more drivers).
 
 ## Linux notes
 

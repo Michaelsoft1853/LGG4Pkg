@@ -11,12 +11,27 @@ ARCH_DIR="Nexus6P-AARCH64"
 EFI_FD_NAME="MSM8994_EFI.fd"
 DTB="ImageResources/Angler/msm8994-huawei-angler.dtb"
 OUT_IMG="ImageResources/Angler/uefi_angler.img"
+PAGESIZE=4096
+RAMDISK_OFFSET="0x02000000"
+TAGS_OFFSET="0x01e00000"
     ;;
 Nexus5X)
 ARCH_DIR="Nexus5X-AARCH64"
 EFI_FD_NAME="MSM8992_EFI.fd"
 DTB="ImageResources/Bullhead/msm8992_lge_bullhead.dtb"
 OUT_IMG="ImageResources/Bullhead/uefi_bullhead.img"
+PAGESIZE=4096
+RAMDISK_OFFSET="0x02000000"
+TAGS_OFFSET="0x01e00000"
+    ;;
+LGG4)
+ARCH_DIR="LGG4-AARCH64"
+EFI_FD_NAME="MSM8992_EFI.fd"
+DTB="ImageResources/LGG4/msm8992_lge_g4.dtb"
+OUT_IMG="ImageResources/LGG4/uefi_lgg4.img"
+PAGESIZE=4096
+RAMDISK_OFFSET="0x01000000"
+TAGS_OFFSET="0x00000100"
     ;;
 *)
 echo "Bootimages: Invalid platform: ${device}" 1>&2
@@ -43,11 +58,23 @@ python3 "ImageResources/mkbootimg.py" \
 --kernel "${FV_DIR}/Image.gz-dtb" \
 --ramdisk "${ramdisk}" \
 --base 0x00000000 \
---pagesize 4096 \
---ramdisk_offset 0x02000000 \
---tags_offset 0x01e00000 \
+--pagesize "${PAGESIZE}" \
+--ramdisk_offset "${RAMDISK_OFFSET}" \
+--tags_offset "${TAGS_OFFSET}" \
 -o "${OUT_IMG}"
 ret=$?
+
+if [ "${device}" == "LGG4" ]; then
+    python3 "ImageResources/mkbootimg.py" \
+    --kernel "${FV_DIR}/Image.gz-dtb" \
+    --ramdisk "${ramdisk}" \
+    --base 0x00000000 \
+    --pagesize 2048 \
+    --ramdisk_offset "${RAMDISK_OFFSET}" \
+    --tags_offset "${TAGS_OFFSET}" \
+    -o "ImageResources/LGG4/uefi_lgg4_2k.img"
+    echo "Built ImageResources/LGG4/uefi_lgg4_2k.img (2048 pagesize)"
+fi
 
 rm -f "${ramdisk}"
 

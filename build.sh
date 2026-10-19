@@ -4,7 +4,7 @@ set -e
 export PACKAGES_PATH=$PWD/../edk2:$PWD
 export WORKSPACE=$PWD/workspace
 
-AvailablePlatforms=("Nexus5X" "Nexus6P" "All")
+AvailablePlatforms=("Nexus5X" "Nexus6P" "LGG4" "All")
 IsValid=0
 BUILD_TYPE="DEBUG"
 device=""
@@ -239,7 +239,7 @@ echo " - ${Name}"
 done
 echo ""
 echo "Options:"
-echo "  -d <device>   Platform to build (Nexus5X | Nexus6P | All)"
+echo "  -d <device>   Platform to build (Nexus5X | Nexus6P | LGG4 | All)"
 echo "  --release     Build in RELEASE mode instead of DEBUG"
 echo "  --clean       Rebuild BaseTools before building platform(s)"
 fi

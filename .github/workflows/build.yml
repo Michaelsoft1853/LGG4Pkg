@@ -1,0 +1,113 @@
+name: Build UEFI Firmware
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'Target Device'
+        required: true
+        default: 'LGG4'
+        type: choice
+        options:
+          - LGG4
+          - Nexus5X
+          - Nexus6P
+          - All
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'RELEASE'
+        type: choice
+        options:
+          - RELEASE
+          - DEBUG
+
+jobs:
+  build:
+    name: Build UEFI
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout LGG4Pkg
+        uses: actions/checkout@v4
+        with:
+          path: LGG4Pkg
+          submodules: recursive
+
+      - name: Checkout EDK2 (Known Good Commit)
+        uses: actions/checkout@v4
+        with:
+          repository: tianocore/edk2
+          ref: 838c730fe61578847823da1b815e4c9c5ee1bed4
+          submodules: recursive
+          path: edk2
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            uuid-dev \
+            iasl \
+            git \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu \
+            python3 \
+            device-tree-compiler \
+            bison \
+            flex \
+            libssl-dev
+
+      - name: Build EDK2 BaseTools
+        run: |
+          make -C edk2/BaseTools -j$(nproc)
+
+      - name: Build Firmware Images
+        run: |
+          DEVICE="${{ github.event.inputs.device || 'LGG4' }}"
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'RELEASE' }}"
+          
+          cd LGG4Pkg
+          chmod +x build.sh build_boot_images.sh
+          
+          EXTRA_ARGS=""
+          if [ "${BUILD_TYPE}" = "RELEASE" ]; then
+            EXTRA_ARGS="--release"
+          fi
+          
+          echo "Building for device: ${DEVICE} (${BUILD_TYPE})"
+          ./build.sh -d "${DEVICE}" ${EXTRA_ARGS}
+
+      - name: Upload LG G4 Boot Images
+        if: (github.event.inputs.device || 'LGG4') == 'LGG4' || github.event.inputs.device == 'All'
+        uses: actions/upload-artifact@v4
+        with:
+          name: uefi-lgg4-${{ github.event.inputs.build_type || 'RELEASE' }}
+          path: |
+            LGG4Pkg/ImageResources/LGG4/uefi_lgg4*.img
+            LGG4Pkg/workspace/Build/LGG4-AARCH64/*_GCC5/FV/*.fd
+          if-no-files-found: warn
+
+      - name: Upload Nexus 5X Boot Images
+        if: github.event.inputs.device == 'Nexus5X' || github.event.inputs.device == 'All'
+        uses: actions/upload-artifact@v4
+        with:
+          name: uefi-nexus5x-${{ github.event.inputs.build_type || 'RELEASE' }}
+          path: |
+            LGG4Pkg/ImageResources/Bullhead/uefi_bullhead*.img
+            LGG4Pkg/workspace/Build/Nexus5X-AARCH64/*_GCC5/FV/*.fd
+          if-no-files-found: warn
+
+      - name: Upload Nexus 6P Boot Images
+        if: github.event.inputs.device == 'Nexus6P' || github.event.inputs.device == 'All'
+        uses: actions/upload-artifact@v4
+        with:
+          name: uefi-nexus6p-${{ github.event.inputs.build_type || 'RELEASE' }}
+          path: |
+            LGG4Pkg/ImageResources/Angler/uefi_angler*.img
+            LGG4Pkg/workspace/Build/Nexus6P-AARCH64/*_GCC5/FV/*.fd
+          if-no-files-found: warn

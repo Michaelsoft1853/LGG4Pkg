@@ -84,7 +84,18 @@ VOID CheckMdpConfig(VOID)
 {
   UINT32 Width = FixedPcdGet32(PcdMipiFrameBufferWidth);
 
-#if SILICON_PLATFORM == 8992
+#if defined(DEVICE_LGG4)
+  /* LG G4 uses dual-pipe split framebuffer (1440x2560) */
+  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_FORMAT, 0x000237FF);
+  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
+  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
+  MmioWrite32(MDP_CTL_0_BASE + CTL_FLUSH, (1 << (0)));
+
+  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_FORMAT, 0x000237FF);
+  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
+  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
+  MmioWrite32(MDP_CTL_1_BASE + CTL_FLUSH, (1 << (1)));
+#elif SILICON_PLATFORM == 8992
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_FORMAT, 0x000236FF);
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
@@ -114,28 +125,40 @@ STATIC
 VOID
 DisplayEnableRefresh(VOID)
 {
-#if SILICON_PLATFORM == 8994
+#if SILICON_PLATFORM == 8994 || defined(DEVICE_LGG4)
   UINT32 Height = FixedPcdGet32(PcdMipiFrameBufferHeight);
   UINT32 VsyncCount = 19200000 / (Height * 60);
 #endif
   UINT32 MdssMdpRev = MmioRead32(MDP_HW_REV);
   UINT32 pp0_base;
+  UINT32 pp1_base;
 
-  if (MdssMdpRev >= MDSS_MDP_HW_REV_105)
+  if (MdssMdpRev >= MDSS_MDP_HW_REV_105) {
     pp0_base = REG_MDP(0x71000);
-  else if (MdssMdpRev >= MDSS_MDP_HW_REV_102)
+    pp1_base = REG_MDP(0x71800);
+  } else if (MdssMdpRev >= MDSS_MDP_HW_REV_102) {
     pp0_base = REG_MDP(0x12D00);
-  else
+    pp1_base = REG_MDP(0x12E00);
+  } else {
     pp0_base = REG_MDP(0x21B00);
+    pp1_base = REG_MDP(0x21C00);
+  }
 
-#if SILICON_PLATFORM == 8994
-  /* Only needed for angler, bullhead has it enabled already */
+#if SILICON_PLATFORM == 8994 || defined(DEVICE_LGG4)
+  /* Only needed for angler and LG G4, bullhead has it enabled already */
   MmioWrite32(pp0_base + MDP_PP_SYNC_CONFIG_VSYNC, VsyncCount | BIT(19));
+  MmioWrite32(pp1_base + MDP_PP_SYNC_CONFIG_VSYNC, VsyncCount | BIT(19));
 #endif
 
   /* Enable autorefresh and flush */
   MmioWrite32(pp0_base + MDP_PP_AUTOREFRESH_CONFIG, BIT(31) | AUTOREFRESH_FRAMENUM);
+#if defined(DEVICE_LGG4)
+  MmioWrite32(pp1_base + MDP_PP_AUTOREFRESH_CONFIG, BIT(31) | AUTOREFRESH_FRAMENUM);
+#endif
   MmioWrite32(MDP_CTL_0_BASE + CTL_START, 1);
+#if defined(DEVICE_LGG4)
+  MmioWrite32(MDP_CTL_1_BASE + CTL_START, 1);
+#endif
 }
 
 VOID PlatformInitialize()
