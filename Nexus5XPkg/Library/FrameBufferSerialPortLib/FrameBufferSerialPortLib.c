@@ -41,6 +41,8 @@ SerialPortInitialize(VOID)
 
   // Reset console
   FbConReset();
+  ResetFb();
+  FbConFlush();
 
   // Set flag
   m_Initialized = TRUE;

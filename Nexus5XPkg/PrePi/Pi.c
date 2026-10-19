@@ -44,13 +44,18 @@ static UINT32 ProcessorIdMapping[8] = {
 
 VOID SetupMpPark()
 {
+#if defined(DEVICE_LGG4)
+  /* Keep single-core during initial bringup on LG G4 to prevent SCM/power-rail hangs */
+  return;
+#else
   /* Launch all CPUs
    * - set boot adress to &SecondaryCpuEntry
    * - boot cpus
    */
 	if (cpu_boot_set_addr((UINTN)&SecondaryCpuEntry, BOOT_ARM64))  
   {
-		for(;;) {}; // Set boot adress failed, loop forever
+		DEBUG((EFI_D_ERROR, "cpu_boot_set_addr failed, skipping MpPark!\n"));
+		return;
 	}
 
   // Launch all CPUs
@@ -69,6 +74,7 @@ VOID SetupMpPark()
       }
     }
   }
+#endif
 }
 
 VOID PrePiMain(IN VOID *StackBase, IN UINTN StackSize)
