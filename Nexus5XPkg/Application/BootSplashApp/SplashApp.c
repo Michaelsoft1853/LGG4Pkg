@@ -80,17 +80,22 @@ VOID EFIAPI InputPollingCallback(IN EFI_EVENT Event, IN VOID *Context)
   EFI_STATUS                 Status;
   EFI_KEY_DATA               KeyData;
   EFI_ABSOLUTE_POINTER_STATE PointerState;
-  Status = mSimpleTextInputProtocol->ReadKeyStrokeEx(
-      mSimpleTextInputProtocol, &KeyData);
-  if (!EFI_ERROR(Status)) {
-    if (KeyData.Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
-      mBootTorEFIndApp = TRUE;
+  if (mSimpleTextInputProtocol != NULL) {
+    Status = mSimpleTextInputProtocol->ReadKeyStrokeEx(
+        mSimpleTextInputProtocol, &KeyData);
+    if (!EFI_ERROR(Status)) {
+      if (KeyData.Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
+        mBootTorEFIndApp = TRUE;
+      }
     }
   }
-  Status = mAbsPointerProtocol->GetState(mAbsPointerProtocol, &PointerState);
-  if (!EFI_ERROR(Status)) {
-    // Tapping anywhere is okay
-    mBootTorEFIndApp = TRUE;
+
+  if (mAbsPointerProtocol != NULL) {
+    Status = mAbsPointerProtocol->GetState(mAbsPointerProtocol, &PointerState);
+    if (!EFI_ERROR(Status)) {
+      // Tapping anywhere is okay
+      mBootTorEFIndApp = TRUE;
+    }
   }
 
   if (mCounter >= mCounterThreshold || mBootTorEFIndApp) {
@@ -152,6 +157,7 @@ VOID EFIAPI DrawPrompt(BOOLEAN Clear)
   unsigned int   Width;
   unsigned int   Height;
   UINT32         DecoderError;
+  UINTN          DestX;
 
   if (Clear) {
     Status = GetSectionFromAnyFv(
@@ -171,10 +177,14 @@ VOID EFIAPI DrawPrompt(BOOLEAN Clear)
       ConvertBetweenBGRAandRGBA(DecodedData, Width, Height);
 
       // Just check for safety
-      if (mGop->Mode->Info->VerticalResolution - Height > 0) {
+      if (mGop->Mode->Info->VerticalResolution > Height) {
+        DestX = 0;
+        if (mGop->Mode->Info->HorizontalResolution > Width) {
+          DestX = (mGop->Mode->Info->HorizontalResolution - Width) / 2;
+        }
         mGop->Blt(
             mGop, (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)DecodedData,
-            EfiBltBufferToVideo, 0, 0, 0,
+            EfiBltBufferToVideo, 0, 0, DestX,
             mGop->Mode->Info->VerticalResolution - Height, Width, Height, 0);
       }
     }
@@ -192,17 +202,19 @@ EFI_STATUS EFIAPI InitializeBootSplash(
       EFI_TIMER_PERIOD_SECONDS(PcdGet16(PcdPlatformBootTimeOut)) /
       EFI_TIMER_PERIOD_MILLISECONDS(250);
 
+  mAbsPointerProtocol = NULL;
   Status = gBS->LocateProtocol(
       &gEfiAbsolutePointerProtocolGuid, NULL, (VOID **)&mAbsPointerProtocol);
   if (EFI_ERROR(Status)) {
-    goto exit;
+    mAbsPointerProtocol = NULL;
   }
 
+  mSimpleTextInputProtocol = NULL;
   Status = gBS->LocateProtocol(
       &gEfiSimpleTextInputExProtocolGuid, NULL,
       (VOID **)&mSimpleTextInputProtocol);
   if (EFI_ERROR(Status)) {
-    goto exit;
+    mSimpleTextInputProtocol = NULL;
   }
 
   Status = gBS->LocateProtocol(
