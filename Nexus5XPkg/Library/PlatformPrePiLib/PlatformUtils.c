@@ -82,25 +82,22 @@ STATIC VOID UartInit(VOID)
  */
 VOID CheckMdpConfig(VOID)
 {
-  UINT32 Width = FixedPcdGet32(PcdMipiFrameBufferWidth);
-
 #if defined(DEVICE_LGG4)
-  /* LG G4 uses dual-pipe split display (1440x2560 QHD dual-DSI command mode) */
-  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_FORMAT, 0x000237FF);
-  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
-  MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
-  MmioWrite32(MDP_CTL_0_BASE + CTL_FLUSH, (1 << (0)));
-
-  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_FORMAT, 0x000237FF);
-  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
-  MmioWrite32(ANGLER_PIPE2_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
-  MmioWrite32(MDP_CTL_1_BASE + CTL_FLUSH, (1 << (1)));
+  /* LG G4's Little Kernel already initializes the dual-pipe MDP configuration
+   * (split display, strides, source cropping and layer mixer routing) for the
+   * 1440x2560 QHD panel. Manually overwriting registers with Angler VIG pipes
+   * corrupts the display scanout and causes white vertical noise. Leave LK's
+   * proven dual-pipe configuration intact.
+   */
+  return;
 #elif SILICON_PLATFORM == 8992
+  UINT32 Width = FixedPcdGet32(PcdMipiFrameBufferWidth);
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_FORMAT, 0x000236FF);
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
   MmioWrite32(BULLHEAD_PIPE_BASE + PIPE_SSPP_SRC_YSTRIDE, Width * 4);
   MmioWrite32(MDP_CTL_0_BASE + CTL_FLUSH, (1 << (3)));
 #else
+  UINT32 Width = FixedPcdGet32(PcdMipiFrameBufferWidth);
   /* Angler uses dual-pipe framebuffer */
   MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_FORMAT, 0x000237FF);
   MmioWrite32(ANGLER_PIPE_BASE + PIPE_SSPP_SRC_UNPACK_PATTERN, 0x03020001);
@@ -125,7 +122,7 @@ STATIC
 VOID
 DisplayEnableRefresh(VOID)
 {
-#if SILICON_PLATFORM == 8994 || defined(DEVICE_LGG4)
+#if SILICON_PLATFORM == 8994
   UINT32 Height = FixedPcdGet32(PcdMipiFrameBufferHeight);
   UINT32 VsyncCount = 19200000 / (Height * 60);
 #endif
@@ -144,10 +141,9 @@ DisplayEnableRefresh(VOID)
     pp1_base = REG_MDP(0x21C00);
   }
 
-#if SILICON_PLATFORM == 8994 || defined(DEVICE_LGG4)
-  /* Needed for angler and LG G4 command-mode panels */
+#if SILICON_PLATFORM == 8994
+  /* Only needed for angler, LG bootloader has it enabled already */
   MmioWrite32(pp0_base + MDP_PP_SYNC_CONFIG_VSYNC, VsyncCount | BIT(19));
-  MmioWrite32(pp1_base + MDP_PP_SYNC_CONFIG_VSYNC, VsyncCount | BIT(19));
 #endif
 
   /* Enable autorefresh and flush */

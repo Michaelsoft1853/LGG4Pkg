@@ -52,21 +52,11 @@ SerialPortInitialize(VOID)
 
 void ResetFb(void)
 {
-  // Clear current screen.
-  char *Pixels  = (void *)FixedPcdGet32(PcdMipiFrameBufferAddress);
-  UINTN BgColor = FB_BGRA8888_BLACK;
+  UINT64 *Pixels = (UINT64 *)(UINTN)FixedPcdGet32(PcdMipiFrameBufferAddress);
+  UINTN   Count  = (gWidth * gHeight * (gBpp / 8)) / sizeof(UINT64);
 
-  // Set to black color.
-  for (UINTN i = 0; i < gWidth; i++) {
-    for (UINTN j = 0; j < gHeight; j++) {
-      BgColor = FB_BGRA8888_BLACK;
-      // Set pixel bit
-      for (UINTN p = 0; p < (gBpp / 8); p++) {
-        *Pixels = (unsigned char)BgColor;
-        BgColor = BgColor >> 8;
-        Pixels++;
-      }
-    }
+  while (Count--) {
+    *Pixels++ = 0;
   }
 }
 
