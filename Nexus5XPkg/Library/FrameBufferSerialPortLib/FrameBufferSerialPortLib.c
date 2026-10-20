@@ -234,18 +234,17 @@ void FbConDrawglyph(
   }
 }
 
-/* TODO: Take stride into account */
 void FbConScrollUp(void)
 {
-  unsigned short *dst   = (void *)FixedPcdGet32(PcdMipiFrameBufferAddress);
-  unsigned short *src   = dst + (gWidth * FONT_HEIGHT);
-  unsigned        count = gWidth * (gHeight - FONT_HEIGHT);
+  UINT32 *dst   = (UINT32 *)(UINTN)FixedPcdGet32(PcdMipiFrameBufferAddress);
+  UINT32 *src   = dst + (gWidth * FONT_HEIGHT * SCALE_FACTOR);
+  UINTN   count = gWidth * (gHeight - FONT_HEIGHT * SCALE_FACTOR);
 
   while (count--) {
     *dst++ = *src++;
   }
 
-  count = gWidth * FONT_HEIGHT;
+  count = gWidth * FONT_HEIGHT * SCALE_FACTOR;
   while (count--) {
     *dst++ = m_Color.Background;
   }
