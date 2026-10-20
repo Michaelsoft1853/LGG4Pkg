@@ -54,9 +54,11 @@ void ResetFb(void)
 {
   UINT64 *Pixels = (UINT64 *)(UINTN)FixedPcdGet32(PcdMipiFrameBufferAddress);
   UINTN   Count  = (gWidth * gHeight * (gBpp / 8)) / sizeof(UINT64);
+  UINT32  Color32 = m_Color.Background;
+  UINT64  Color64 = ((UINT64)Color32 << 32) | (UINT64)Color32;
 
   while (Count--) {
-    *Pixels++ = 0;
+    *Pixels++ = Color64;
   }
 }
 
@@ -70,9 +72,9 @@ void FbConReset(void)
   m_MaxPosition.x = gWidth / (FONT_WIDTH + 1);
   m_MaxPosition.y = (gHeight - 1) / FONT_HEIGHT;
 
-  // Reset color.
+  // Reset color: White text on Dark Navy Blue background
   m_Color.Foreground = FB_BGRA8888_WHITE;
-  m_Color.Background = FB_BGRA8888_BLACK;
+  m_Color.Background = 0xFF182A4A;
 }
 
 void FbConPutCharWithFactor(char c, int type, unsigned scale_factor)

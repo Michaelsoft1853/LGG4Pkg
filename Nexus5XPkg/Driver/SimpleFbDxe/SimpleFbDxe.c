@@ -246,8 +246,10 @@ SimpleFbDxeInitialize(
   }
 
   ASSERT_EFI_ERROR(Status);
-  ZeroMem((VOID *)FrameBufferAddress, FrameBufferSize);
-  WriteBackInvalidateDataCacheRange((VOID *)FrameBufferAddress, FrameBufferSize);
+  if (!FixedPcdGetBool(PcdEnableScreenSerial)) {
+    ZeroMem((VOID *)FrameBufferAddress, FrameBufferSize);
+    WriteBackInvalidateDataCacheRange((VOID *)FrameBufferAddress, FrameBufferSize);
+  }
 
   /* Register handle */
   Status = gBS->InstallMultipleProtocolInterfaces(

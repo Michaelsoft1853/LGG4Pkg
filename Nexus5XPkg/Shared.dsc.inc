@@ -94,7 +94,7 @@
   #  DEBUG_EVENT     0x00080000  // Event messages
   #  DEBUG_ERROR     0x80000000  // Error
   
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel| 0x80000005
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel| 0x8000004F
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x00
 
   #
@@ -340,7 +340,7 @@
 !endif
 
   # Platform Drivers
-!if $(USE_SCREEN_FOR_SERIAL_OUTPUT) == 1
+!if $(USE_SCREEN_FOR_SERIAL_OUTPUT) == 1 || $(USE_SCREEN_FOR_SERIAL_OUTPUT) == TRUE
   SerialPortLib|Nexus5XPkg/Library/FrameBufferSerialPortLib/FrameBufferSerialPortLib.inf
 !else
 !if $(USE_UART_FOR_SERIAL_OUTPUT) == 1
