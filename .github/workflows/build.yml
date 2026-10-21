@@ -20,11 +20,11 @@ on:
       build_type:
         description: 'Build Type'
         required: true
-        default: 'DEBUG'
+        default: 'RELEASE'
         type: choice
         options:
-          - DEBUG
           - RELEASE
+          - DEBUG
 
 jobs:
   build:
@@ -69,7 +69,7 @@ jobs:
       - name: Build Firmware Images
         run: |
           DEVICE="${{ github.event.inputs.device || 'LGG4' }}"
-          BUILD_TYPE="${{ github.event.inputs.build_type || 'DEBUG' }}"
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'RELEASE' }}"
           
           cd LGG4Pkg
           chmod +x build.sh build_boot_images.sh
@@ -86,7 +86,7 @@ jobs:
         if: (github.event.inputs.device || 'LGG4') == 'LGG4' || github.event.inputs.device == 'All'
         uses: actions/upload-artifact@v4
         with:
-          name: uefi-lgg4-${{ github.event.inputs.build_type || 'DEBUG' }}
+          name: uefi-lgg4-${{ github.event.inputs.build_type || 'RELEASE' }}
           path: |
             LGG4Pkg/ImageResources/LGG4/uefi_lgg4*.img
             LGG4Pkg/workspace/Build/LGG4-AARCH64/*_GCC5/FV/*.fd
@@ -96,7 +96,7 @@ jobs:
         if: github.event.inputs.device == 'Nexus5X' || github.event.inputs.device == 'All'
         uses: actions/upload-artifact@v4
         with:
-          name: uefi-nexus5x-${{ github.event.inputs.build_type || 'DEBUG' }}
+          name: uefi-nexus5x-${{ github.event.inputs.build_type || 'RELEASE' }}
           path: |
             LGG4Pkg/ImageResources/Bullhead/uefi_bullhead*.img
             LGG4Pkg/workspace/Build/Nexus5X-AARCH64/*_GCC5/FV/*.fd
@@ -106,7 +106,7 @@ jobs:
         if: github.event.inputs.device == 'Nexus6P' || github.event.inputs.device == 'All'
         uses: actions/upload-artifact@v4
         with:
-          name: uefi-nexus6p-${{ github.event.inputs.build_type || 'DEBUG' }}
+          name: uefi-nexus6p-${{ github.event.inputs.build_type || 'RELEASE' }}
           path: |
             LGG4Pkg/ImageResources/Angler/uefi_angler*.img
             LGG4Pkg/workspace/Build/Nexus6P-AARCH64/*_GCC5/FV/*.fd

@@ -118,7 +118,6 @@ InitializeUserInterface(
     IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable)
 {
   EFI_STATUS    Status = EFI_SUCCESS;
-  EFI_STATUS    TouchStatus;
   UINTN         WaitIndex;
   EFI_INPUT_KEY Key;
 
@@ -138,11 +137,10 @@ InitializeUserInterface(
   if (EFI_ERROR(Status))
     goto exit;
 
-  // Initialize Touch (non-fatal if absent)
-  TouchStatus = EfiTouchScreenInit();
-  if (EFI_ERROR(TouchStatus)) {
-    DEBUG((EFI_D_WARN, "TouchScreen not available: %r\n", TouchStatus));
-  }
+  // Initialize Touch
+  Status = EfiTouchScreenInit();
+  if (EFI_ERROR(Status))
+    goto exit;
 
   // Initialize Menu
   DrawMenu();
@@ -175,11 +173,7 @@ InitializeUserInterface(
   }
 
 exit:
-  if (mTimerEvent != NULL) {
-    gBS->CloseEvent(mTimerEvent);
-  }
-  if (mExitEvent != NULL) {
-    gBS->CloseEvent(mExitEvent);
-  }
+  gBS->CloseEvent(mTimerEvent);
+  gBS->CloseEvent(mExitEvent);
   return Status;
 }

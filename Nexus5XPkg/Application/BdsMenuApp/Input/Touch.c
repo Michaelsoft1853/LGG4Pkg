@@ -44,20 +44,17 @@ exit:
 EFIAPI EFI_STATUS EfiTouchScreenInit()
 {
   EFI_STATUS Status = EFI_SUCCESS;
-  mPointer          = NULL;
-
-  Status = gBS->LocateProtocol(
+  Status            = gBS->LocateProtocol(
       &gEfiAbsolutePointerProtocolGuid, NULL, (VOID **)&mPointer);
 
   if (EFI_ERROR(Status))
     goto exit;
+  ASSERT(mPointer != NULL);
 
-  if (mPointer != NULL) {
-    lv_indev_drv_init(&mTouchInputDrv);
-    mTouchInputDrv.type = LV_INDEV_TYPE_POINTER;
-    mTouchInputDrv.read = EfiTouchScreenRead;
-    lv_indev_drv_register(&mTouchInputDrv);
-  }
+  lv_indev_drv_init(&mTouchInputDrv);
+  mTouchInputDrv.type = LV_INDEV_TYPE_POINTER;
+  mTouchInputDrv.read = EfiTouchScreenRead;
+  lv_indev_drv_register(&mTouchInputDrv);
 
 exit:
   return Status;

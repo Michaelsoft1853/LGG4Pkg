@@ -154,12 +154,6 @@ DisplayBlt(
       DestinationX, DestinationY, Width, Height, Delta);
   gBS->RestoreTPL(Tpl);
 
-  if (!RETURN_ERROR(Status) && BltOperation != EfiBltVideoToBltBuffer) {
-    WriteBackInvalidateDataCacheRange(
-        (VOID *)(UINTN)(This->Mode->FrameBufferBase + DestinationY * This->Mode->Info->PixelsPerScanLine * FB_BYTES_PER_PIXEL),
-        Height * This->Mode->Info->PixelsPerScanLine * FB_BYTES_PER_PIXEL);
-  }
-
   return RETURN_ERROR(Status) ? EFI_INVALID_PARAMETER : EFI_SUCCESS;
 }
 
@@ -246,10 +240,7 @@ SimpleFbDxeInitialize(
   }
 
   ASSERT_EFI_ERROR(Status);
-  if (!FixedPcdGetBool(PcdEnableScreenSerial)) {
-    ZeroMem((VOID *)FrameBufferAddress, FrameBufferSize);
-    WriteBackInvalidateDataCacheRange((VOID *)FrameBufferAddress, FrameBufferSize);
-  }
+  ZeroMem((VOID *)FrameBufferAddress, FrameBufferSize);
 
   /* Register handle */
   Status = gBS->InstallMultipleProtocolInterfaces(

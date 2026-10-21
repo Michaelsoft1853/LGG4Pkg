@@ -77,11 +77,6 @@ VOID SetupMpPark()
 #endif
 }
 
-STATIC VOID PrePiLog(CONST CHAR8 *Msg)
-{
-  SerialPortWrite((UINT8 *)Msg, AsciiStrLen(Msg));
-}
-
 VOID PrePiMain(IN VOID *StackBase, IN UINTN StackSize)
 {
 
@@ -124,26 +119,24 @@ VOID PrePiMain(IN VOID *StackBase, IN UINTN StackSize)
   InvalidateDataCacheRange(
       (VOID *)(UINTN)PcdGet64(PcdFdBaseAddress), PcdGet32(PcdFdSize));
 
-  PrePiLog("PrePi: Configuring MMU...\n");
   // Initialize MMU
   Status = MemoryPeim(UefiMemoryBase, UefiMemorySize);
 
   if (EFI_ERROR(Status)) {
-    PrePiLog("PrePi: ERROR: MMU failed!\n");
+    DEBUG((EFI_D_ERROR, "Failed to configure MMU\n"));
     CpuDeadLoop();
   }
-  PrePiLog("PrePi: MMU OK\n");
+
+  DEBUG((EFI_D_LOAD | EFI_D_INFO, "MMU configured from device config\n"));
 
   // Initialize GIC
   if (!FixedPcdGetBool(PcdIsLkBuild)) {
-    PrePiLog("PrePi: Initializing GIC...\n");
     Status = QGicPeim();
 
     if (EFI_ERROR(Status)) {
-      PrePiLog("PrePi: ERROR: GIC failed!\n");
+      DEBUG((EFI_D_ERROR, "Failed to configure GIC\n"));
       CpuDeadLoop();
     }
-    PrePiLog("PrePi: GIC OK\n");
   }
 
   // Add HOBs
@@ -156,7 +149,6 @@ VOID PrePiMain(IN VOID *StackBase, IN UINTN StackSize)
   SetBootMode(BOOT_WITH_FULL_CONFIGURATION);
 
   // Initialize Platform HOBs (CpuHob and FvHob)
-  PrePiLog("PrePi: PlatformPeim...\n");
   Status = PlatformPeim();
   ASSERT_EFI_ERROR(Status);
 
@@ -170,29 +162,18 @@ VOID PrePiMain(IN VOID *StackBase, IN UINTN StackSize)
   // information PERF_START (NULL, "PEI", NULL, StartTimeStamp);
 
   // SEC phase needs to run library constructors by hand.
-  PrePiLog("PrePi: LibraryConstructors...\n");
   ProcessLibraryConstructorList();
 
   // Assume the FV that contains the PI (our code) also contains a compressed
   // FV.
-  PrePiLog("PrePi: Decompressing FVMAIN...\n");
   Status = DecompressFirstFv();
-  if (EFI_ERROR(Status)) {
-    PrePiLog("PrePi: ERROR: DecompressFirstFv failed!\n");
-    CpuDeadLoop();
-  }
-  PrePiLog("PrePi: FVMAIN OK\n");
+  ASSERT_EFI_ERROR(Status);
 
   // Load the DXE Core and transfer control to it
-  PrePiLog("PrePi: Loading DXE Core...\n");
   Status = LoadDxeCoreFromFv(NULL, 0);
-  if (EFI_ERROR(Status)) {
-    PrePiLog("PrePi: ERROR: LoadDxeCore failed!\n");
-    CpuDeadLoop();
-  }
+  ASSERT_EFI_ERROR(Status);
 
   // We should never reach here
-  PrePiLog("PrePi: ERROR: LoadDxeCore returned!\n");
   CpuDeadLoop();
 }
 
@@ -205,15 +186,10 @@ CEntryPoint(
   // Do platform specific initialization here
   PlatformInitialize();
 
-  PrePiLog("\n===================================\n");
-  PrePiLog("  LG G4 EDK2 Bringup (MSM8992)     \n");
-  PrePiLog("===================================\n");
-
   // Goto primary Main.
   PrePiMain(StackBase, StackSize);
 
   // DXE Core should always load and never return
-  PrePiLog("PrePi: ERROR: PrePiMain returned!\n");
   ASSERT(FALSE);
 }
 

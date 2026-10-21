@@ -54,11 +54,9 @@ void ResetFb(void)
 {
   UINT64 *Pixels = (UINT64 *)(UINTN)FixedPcdGet32(PcdMipiFrameBufferAddress);
   UINTN   Count  = (gWidth * gHeight * (gBpp / 8)) / sizeof(UINT64);
-  UINT32  Color32 = m_Color.Background;
-  UINT64  Color64 = ((UINT64)Color32 << 32) | (UINT64)Color32;
 
   while (Count--) {
-    *Pixels++ = Color64;
+    *Pixels++ = 0;
   }
 }
 
@@ -72,9 +70,9 @@ void FbConReset(void)
   m_MaxPosition.x = gWidth / (FONT_WIDTH + 1);
   m_MaxPosition.y = (gHeight - 1) / FONT_HEIGHT;
 
-  // Reset color: White text on Dark Navy Blue background
+  // Reset color.
   m_Color.Foreground = FB_BGRA8888_WHITE;
-  m_Color.Background = 0xFF182A4A;
+  m_Color.Background = FB_BGRA8888_BLACK;
 }
 
 void FbConPutCharWithFactor(char c, int type, unsigned scale_factor)
@@ -234,17 +232,18 @@ void FbConDrawglyph(
   }
 }
 
+/* TODO: Take stride into account */
 void FbConScrollUp(void)
 {
-  UINT32 *dst   = (UINT32 *)(UINTN)FixedPcdGet32(PcdMipiFrameBufferAddress);
-  UINT32 *src   = dst + (gWidth * FONT_HEIGHT * SCALE_FACTOR);
-  UINTN   count = gWidth * (gHeight - FONT_HEIGHT * SCALE_FACTOR);
+  unsigned short *dst   = (void *)FixedPcdGet32(PcdMipiFrameBufferAddress);
+  unsigned short *src   = dst + (gWidth * FONT_HEIGHT);
+  unsigned        count = gWidth * (gHeight - FONT_HEIGHT);
 
   while (count--) {
     *dst++ = *src++;
   }
 
-  count = gWidth * FONT_HEIGHT * SCALE_FACTOR;
+  count = gWidth * FONT_HEIGHT;
   while (count--) {
     *dst++ = m_Color.Background;
   }
